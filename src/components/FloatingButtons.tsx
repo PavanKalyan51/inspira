@@ -15,7 +15,7 @@ const FloatingButtons: React.FC = () => {
       {/* WhatsApp Button */}
       <button 
         onClick={handleWhatsAppClick}
-        className="bg-green-500 hover:bg-green-600 text-white transition-all duration-200 flex items-center justify-center"
+        className="bg-green-500 hover:bg-green-600 text-white transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105"
         style={{ 
           width: '60px', 
           height: '60px',
@@ -24,7 +24,7 @@ const FloatingButtons: React.FC = () => {
         aria-label="Contact us on WhatsApp"
       >
         <img 
-          src="/whatsappicom.png" 
+          src="/—Pngtree—whatsapp icon whatsapp logo whatsapp_3584845.png" 
           alt="WhatsApp" 
           className="w-8 h-8"
         />
@@ -33,7 +33,7 @@ const FloatingButtons: React.FC = () => {
       {/* Call Button */}
       <button 
         onClick={handleCallClick}
-        className="bg-[#E2574C] hover:bg-[#d14337] text-white transition-all duration-200 flex items-center justify-center"
+        className="bg-[#E2574C] hover:bg-[#d14337] text-white transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105"
         style={{ 
           width: '60px', 
           height: '60px'
