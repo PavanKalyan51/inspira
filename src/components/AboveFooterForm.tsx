@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const AboveFooterForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -7,27 +9,33 @@ const AboveFooterForm: React.FC = () => {
     phone: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
     
-    // Create form data for Netlify
-    const form = e.target as HTMLFormElement;
-    const formDataToSend = new FormData(form);
-    
-    fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(formDataToSend as any).toString()
-    })
-    .then(() => {
-      // Redirect to thank you page
-      window.location.href = '/thank-you';
-    })
-    .catch((error) => {
-      console.error('Form submission error:', error);
-      alert('There was an error submitting the form. Please try again.');
-    });
+    try {
+      await addDoc(collection(db, 'footerFormSubmissions'), {
+        ...formData,
+        createdAt: serverTimestamp()
+      });
+      
+      setSubmitMessage('Thank you! We will contact you soon.');
+      setFormData({ name: '', phone: '', message: '' });
+      
+      // Redirect to thank you page after a short delay
+      setTimeout(() => {
+        window.location.href = '/thank-you';
+      }, 1500);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitMessage('There was an error submitting the form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,9 +51,17 @@ const AboveFooterForm: React.FC = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} name="contact-hyderabad-team" method="POST" data-netlify="true">
-            <input type="hidden" name="form-name" value="contact-hyderabad-team" />
-            
+          {submitMessage && (
+            <div className={`mb-6 p-4 rounded-lg text-sm ${
+              submitMessage.includes('error') 
+                ? 'bg-red-100 text-red-700 border border-red-200' 
+                : 'bg-green-100 text-green-700 border border-green-200'
+            }`}>
+              {submitMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -59,6 +75,7 @@ const AboveFooterForm: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
                   placeholder="Enter your name"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -74,6 +91,7 @@ const AboveFooterForm: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
                   placeholder="Enter your phone number"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -90,16 +108,18 @@ const AboveFooterForm: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
                 placeholder="Tell us about your project requirements..."
                 required
+                disabled={isSubmitting}
               />
             </div>
 
             <div className="text-center">
               <button
                 type="submit"
-                className="bg-[#E2574C] text-white py-4 px-12 rounded-lg font-semibold hover:bg-[#d14337] transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                disabled={isSubmitting}
+                className="bg-[#E2574C] text-white py-4 px-12 rounded-lg font-semibold hover:bg-[#d14337] transition-colors duration-200 flex items-center space-x-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Submit</span>
-                <Send size={20} />
+                <span>{isSubmitting ? 'Submitting...' : 'Submit'}</span>
+                {!isSubmitting && <Send size={20} />}
               </button>
             </div>
           </form>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Phone } from 'lucide-react';
+import { Phone } from 'lucide-react';
 
 const FloatingButtons: React.FC = () => {
   const handleWhatsAppClick = () => {
@@ -11,25 +11,36 @@ const FloatingButtons: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col space-y-3 sm:space-y-4">
+    <div className="fixed bottom-0 right-0 z-50 flex flex-col">
       {/* WhatsApp Button */}
       <button 
         onClick={handleWhatsAppClick}
-        className="bg-green-500 hover:bg-green-600 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+        className="bg-green-500 hover:bg-green-600 text-white transition-all duration-200 flex items-center justify-center"
+        style={{ 
+          width: '60px', 
+          height: '60px',
+          borderRadius: '8px 0 0 0'
+        }}
         aria-label="Contact us on WhatsApp"
       >
-        <MessageCircle size={20} className="sm:hidden" />
-        <MessageCircle size={24} className="hidden sm:block" />
+        <img 
+          src="/whatsappicom.png" 
+          alt="WhatsApp" 
+          className="w-8 h-8"
+        />
       </button>
 
       {/* Call Button */}
       <button 
         onClick={handleCallClick}
-        className="bg-[#E2574C] hover:bg-[#d14337] text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+        className="bg-[#E2574C] hover:bg-[#d14337] text-white transition-all duration-200 flex items-center justify-center"
+        style={{ 
+          width: '60px', 
+          height: '60px'
+        }}
         aria-label="Call us now"
       >
-        <Phone size={20} className="sm:hidden" />
-        <Phone size={24} className="hidden sm:block" />
+        <Phone size={24} />
       </button>
     </div>
   );

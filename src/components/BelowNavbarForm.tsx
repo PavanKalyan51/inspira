@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const BelowNavbarForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -7,27 +9,33 @@ const BelowNavbarForm: React.FC = () => {
     phone: '',
     whatsapp: false
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
     
-    // Create form data for Netlify
-    const form = e.target as HTMLFormElement;
-    const formDataToSend = new FormData(form);
-    
-    fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(formDataToSend as any).toString()
-    })
-    .then(() => {
-      // Redirect to thank you page
-      window.location.href = '/thank-you';
-    })
-    .catch((error) => {
-      console.error('Form submission error:', error);
-      alert('There was an error submitting the form. Please try again.');
-    });
+    try {
+      await addDoc(collection(db, 'consultationFormSubmissions'), {
+        ...formData,
+        createdAt: serverTimestamp()
+      });
+      
+      setSubmitMessage('Thank you! We will contact you soon.');
+      setFormData({ name: '', phone: '', whatsapp: false });
+      
+      // Redirect to thank you page after a short delay
+      setTimeout(() => {
+        window.location.href = '/thank-you';
+      }, 1500);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitMessage('There was an error submitting the form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,57 +51,75 @@ const BelowNavbarForm: React.FC = () => {
                 Get expert advice from our Hyderabad design team. Schedule your free consultation today.
               </p>
             </div>
-            <form onSubmit={handleSubmit} name="request-consultation" method="POST" data-netlify="true">
-              <input type="hidden" name="form-name" value="request-consultation" />
-              
-              <div className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200 text-sm sm:text-base"
-                    placeholder="Your Name"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200 text-sm sm:text-base"
-                    placeholder="Phone Number"
-                    required
-                  />
+            <div>
+              {submitMessage && (
+                <div className={`mb-4 p-3 rounded-lg text-sm ${
+                  submitMessage.includes('error') 
+                    ? 'bg-red-100 text-red-700 border border-red-200' 
+                    : 'bg-green-100 text-green-700 border border-green-200'
+                }`}>
+                  {submitMessage}
                 </div>
-                
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                  <div className="flex items-center space-x-3">
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                     <input
-                      type="checkbox"
-                      id="whatsapp-consultation"
-                      name="whatsapp"
-                      checked={formData.whatsapp}
-                      onChange={(e) => setFormData({...formData, whatsapp: e.target.checked})}
-                      className="w-4 h-4 text-[#E2574C] border-gray-300 rounded focus:ring-[#E2574C]"
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                      placeholder="Your Name"
+                      required
+                      disabled={isSubmitting}
                     />
-                    <label htmlFor="whatsapp-consultation" className="text-xs sm:text-sm text-gray-600">
-                      Send updates on WhatsApp
-                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      className="px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                      placeholder="Phone Number"
+                      required
+                      disabled={isSubmitting}
+                    />
                   </div>
                   
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto bg-[#E2574C] text-white py-2 px-4 sm:py-3 sm:px-6 lg:px-8 rounded-lg font-semibold hover:bg-[#d14337] transition-colors duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
-                  >
-                    <span>Submit</span>
-                    <ArrowRight size={16} className="sm:hidden" />
-                    <ArrowRight size={20} className="hidden sm:block" />
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="whatsapp-consultation"
+                        name="whatsapp"
+                        checked={formData.whatsapp}
+                        onChange={(e) => setFormData({...formData, whatsapp: e.target.checked})}
+                        className="w-4 h-4 text-[#E2574C] border-gray-300 rounded focus:ring-[#E2574C]"
+                        disabled={isSubmitting}
+                      />
+                      <label htmlFor="whatsapp-consultation" className="text-xs sm:text-sm text-gray-600">
+                        Send updates on WhatsApp
+                      </label>
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full sm:w-auto bg-[#E2574C] text-white py-2 px-4 sm:py-3 sm:px-6 lg:px-8 rounded-lg font-semibold hover:bg-[#d14337] transition-colors duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span>{isSubmitting ? 'Submitting...' : 'Submit'}</span>
+                      {!isSubmitting && (
+                        <>
+                          <ArrowRight size={16} className="sm:hidden" />
+                          <ArrowRight size={20} className="hidden sm:block" />
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>

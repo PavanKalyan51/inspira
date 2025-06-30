@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface ModalProps {
   isOpen: boolean;
@@ -13,28 +15,34 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     phone: '',
     pincode: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
     
-    // Create form data for Netlify
-    const form = e.target as HTMLFormElement;
-    const formDataToSend = new FormData(form);
-    
-    fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(formDataToSend as any).toString()
-    })
-    .then(() => {
-      // Close modal and redirect to thank you page
-      onClose();
-      window.location.href = '/thank-you';
-    })
-    .catch((error) => {
-      console.error('Form submission error:', error);
-      alert('There was an error submitting the form. Please try again.');
-    });
+    try {
+      await addDoc(collection(db, 'popupFormSubmissions'), {
+        ...formData,
+        createdAt: serverTimestamp()
+      });
+      
+      setSubmitMessage('Thank you! We will contact you soon.');
+      setFormData({ name: '', email: '', phone: '', pincode: '' });
+      
+      // Close modal and redirect to thank you page after a short delay
+      setTimeout(() => {
+        onClose();
+        window.location.href = '/thank-you';
+      }, 1500);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitMessage('There was an error submitting the form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -58,9 +66,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} name="free-quote" method="POST" data-netlify="true">
-          <input type="hidden" name="form-name" value="free-quote" />
-          
+        {submitMessage && (
+          <div className={`mb-4 p-3 rounded-lg text-sm ${
+            submitMessage.includes('error') 
+              ? 'bg-red-100 text-red-700 border border-red-200' 
+              : 'bg-green-100 text-green-700 border border-green-200'
+          }`}>
+            {submitMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <input
               type="text"
@@ -70,6 +86,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
               placeholder="Your Name"
               required
+              disabled={isSubmitting}
             />
 
             <input
@@ -80,6 +97,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
               placeholder="Email Address"
               required
+              disabled={isSubmitting}
             />
 
             <input
@@ -90,6 +108,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
               placeholder="Phone Number"
               required
+              disabled={isSubmitting}
             />
 
             <input
@@ -100,13 +119,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E2574C] focus:border-transparent transition-all duration-200"
               placeholder="Pincode"
               required
+              disabled={isSubmitting}
             />
 
             <button
               type="submit"
-              className="w-full bg-[#E2574C] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d14337] transition-colors duration-200"
+              disabled={isSubmitting}
+              className="w-full bg-[#E2574C] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d14337] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Get Free Quote
+              {isSubmitting ? 'Submitting...' : 'Get Free Quote'}
             </button>
           </div>
         </form>

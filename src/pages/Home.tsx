@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import BelowNavbarForm from '../components/BelowNavbarForm';
+import HeroSection from '../components/HeroSection';
 import FindUsSection from '../components/FindUsSection';
 import Modal from '../components/Modal';
 import ExperienceCentreSection from '../components/ExperienceCentreSection';
@@ -21,7 +21,7 @@ const Home: React.FC = () => {
 
   return (
     <div>
-      <BelowNavbarForm />
+      <HeroSection />
       <FindUsSection />
       <ExperienceCentreSection />
       <OneStopShopSection />
